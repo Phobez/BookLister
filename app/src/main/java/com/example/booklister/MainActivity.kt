@@ -15,7 +15,7 @@ import timber.log.Timber
 class MainActivity : AppCompatActivity() {
 
     enum class EMPTY_VIEW {
-        NO_RESULTS, NO_INTERNET, DEFAULT
+        NO_RESULTS, NO_INTERNET, NO_QUERY, DEFAULT
     }
 
     private lateinit var searchInput: EditText
@@ -80,7 +80,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun searchBooks() {
         val searchQuery = searchInput.text.toString()
-        model.searchBooks(searchQuery)
+        if (searchQuery.isBlank()) {
+            displayEmptyView(EMPTY_VIEW.NO_QUERY)
+        } else model.searchBooks(searchQuery)
+
     }
 
     private fun displayEmptyView(type: EMPTY_VIEW = EMPTY_VIEW.DEFAULT) {
