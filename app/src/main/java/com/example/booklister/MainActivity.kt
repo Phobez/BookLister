@@ -5,7 +5,6 @@ import android.net.*
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
@@ -13,6 +12,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.recyclerview.widget.RecyclerView
+import com.example.booklister.databinding.ActivityMainBinding
 import timber.log.Timber
 import java.util.*
 import kotlin.collections.ArrayList
@@ -31,14 +31,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
         Timber.plant(Timber.DebugTree())
 
-        list = findViewById<RecyclerView>(R.id.book_list)
-        emptyView = findViewById(R.id.empty_view)
-        searchInput = findViewById(R.id.search_input)
-        searchButton = findViewById<Button>(R.id.search_button)
+        val binding = ActivityMainBinding.inflate(layoutInflater)
+
+        list = binding.bookList
+        emptyView = binding.emptyView
+        searchInput = binding.searchInput
+        searchButton = binding.searchButton
 
         val onEditorActionListener = TextView.OnEditorActionListener { _, i, _ ->
             var handled = false
@@ -84,6 +85,8 @@ class MainActivity : AppCompatActivity() {
         })
 
         if (!isInternetAvailable()) disableFeatures()
+
+        setContentView(binding.root)
     }
 
     private fun searchBooks() {

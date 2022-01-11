@@ -1,6 +1,5 @@
 package com.example.booklister
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -30,8 +29,7 @@ class BookViewModel : ViewModel() {
     fun searchBooks(searchQuery: String) {
         val newBooks = ArrayList<Book>()
 
-        // val url = URL("https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=20")
-        val url = URL("https://www.googleapis.com/books/v5/volumes?q=${searchQuery}&maxResults=20")
+        val url = URL("https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=20")
 
         viewModelScope.launch {
             val res = makeHttpRequest(url)
