@@ -2,6 +2,7 @@ package com.example.booklister
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
@@ -13,7 +14,12 @@ import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
+    enum class EMPTY_VIEW {
+        NO_RESULTS, NO_INTERNET, DEFAULT
+    }
+
     private lateinit var searchInput: EditText
+    private lateinit var emptyView: TextView
     private val model: BookViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,21 +57,38 @@ class MainActivity : AppCompatActivity() {
 
         list.adapter = adapter
 
+        emptyView = findViewById(R.id.empty_view)
+
+        list.visibility = View.GONE
+        displayEmptyView()
+
         model.getBooks().observe(this, {
-            if (list.adapter != null) {
-                val adapter = list.adapter as BookListAdapter
-                adapter.data = it
-                adapter.notifyDataSetChanged()
+            val adapter = list.adapter as BookListAdapter
+
+            if (it.isEmpty()) {
+                list.visibility = View.GONE
+                displayEmptyView(EMPTY_VIEW.NO_RESULTS)
             } else {
-                val adapter = BookListAdapter(this)
-                adapter.data = it
-                list.adapter = adapter
+                list.visibility = View.VISIBLE
+                emptyView.visibility = View.GONE
             }
+
+            adapter.data = it
+            adapter.notifyDataSetChanged()
         })
     }
 
     private fun searchBooks() {
         val searchQuery = searchInput.text.toString()
         model.searchBooks(searchQuery)
+    }
+
+    private fun displayEmptyView(type: EMPTY_VIEW = EMPTY_VIEW.DEFAULT) {
+        emptyView.text = when (type) {
+            EMPTY_VIEW.NO_RESULTS -> getString(R.string.no_results)
+            EMPTY_VIEW.NO_INTERNET -> getString(R.string.no_internet_connection)
+            else -> getString(R.string.no_data)
+        }
+        emptyView.visibility = View.VISIBLE
     }
 }
