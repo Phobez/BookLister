@@ -16,11 +16,7 @@ class BookListAdapter(private val context: Context) :
         val authors: TextView = itemView.findViewById(R.id.book_authors)
     }
 
-     var data = listOf<Book>()
-        set(value) {
-            field = value
-            notifyDataSetChanged()
-        }
+    var data = listOf<Book>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)

@@ -1,10 +1,13 @@
 package com.example.booklister
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import timber.log.Timber
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
@@ -12,20 +15,56 @@ import java.net.URL
 import java.nio.charset.Charset
 
 class BookViewModel : ViewModel() {
-    suspend fun searchBooks(searchQuery: String) {
+    private val books: MutableLiveData<List<Book>> by lazy {
+        MutableLiveData<List<Book>>()
+    }
+
+    fun getBooks(): LiveData<List<Book>> {
+        return books
+    }
+
+    fun searchBooks(searchQuery: String) {
         val newBooks = ArrayList<Book>()
 
         val url = URL("https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=10")
 
-        val res = makeHttpRequest(url)
+        viewModelScope.launch {
+            val res = makeHttpRequest(url)
 
-        val resObj = JSONObject(res)
+            val resObj = JSONObject(res)
 
+            if (resObj.has("items")) {
+                val items = resObj.getJSONArray("items")
+
+                val maxIndex = items.length() - 1
+
+                for (i in 0..maxIndex) {
+                    val item = items.getJSONObject(i).getJSONObject("volumeInfo")
+                    val title = item.getString("title")
+
+                    val authors = ArrayList<String>()
+
+                    if (item.has("authors")) {
+                        val authorsRaw = item.getJSONArray("authors")
+
+                        val maxAuthorsRawIndex = authorsRaw.length() - 1
+
+                        for (j in 0..maxAuthorsRawIndex) {
+                            authors.add(authorsRaw.getString(j))
+                        }
+                    }
+
+                    val link = item.getString("canonicalVolumeLink")
+
+                    newBooks.add(Book(title, authors, link))
+                }
+            }
+
+            books.postValue(newBooks)
+        }
     }
 
     private suspend fun makeHttpRequest(url: URL): String {
-        var res = ""
-
         return withContext(Dispatchers.IO) {
             val urlConnection = url.openConnection() as HttpURLConnection
             urlConnection.readTimeout = 10000
@@ -45,7 +84,7 @@ class BookViewModel : ViewModel() {
                 line = reader.readLine()
             }
 
-            res = output.toString()
+            val res = output.toString()
 
             res
         }

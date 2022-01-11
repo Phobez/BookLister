@@ -22,12 +22,13 @@ class MainActivity : AppCompatActivity() {
 
         Timber.plant(Timber.DebugTree())
 
-        searchInput = findViewById<EditText>(R.id.search_input)
+        searchInput = findViewById(R.id.search_input)
 
         val onEditorActionListener = TextView.OnEditorActionListener { _, i, _ ->
             var handled = false
 
             if (i == EditorInfo.IME_ACTION_DONE) {
+                Utils.hideKeyboard(this)
                 searchBooks()
                 handled = true
             }
@@ -37,29 +38,24 @@ class MainActivity : AppCompatActivity() {
 
         searchInput.setOnEditorActionListener(onEditorActionListener)
 
-        findViewById<Button>(R.id.search_button).setOnClickListener { searchBooks() }
+        findViewById<Button>(R.id.search_button).setOnClickListener {
+            Utils.hideKeyboard(this)
+            searchBooks()
+        }
 
-//        val TEST_BOOK_LIST = ArrayList<Book>()
-//
-//        TEST_BOOK_LIST.add(Book("The Idiot", listOf<String>("Fyodor Dostoevsky"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("Kokoro", listOf<String>("Natsume Soseki"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("The Idiot", listOf<String>("Fyodor Dostoevsky"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("Kokoro", listOf<String>("Natsume Soseki"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("The Idiot", listOf<String>("Fyodor Dostoevsky"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("Kokoro", listOf<String>("Natsume Soseki"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("The Idiot", listOf<String>("Fyodor Dostoevsky"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("Kokoro", listOf<String>("Natsume Soseki"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("The Idiot", listOf<String>("Fyodor Dostoevsky"), "https://google.com"))
-//        TEST_BOOK_LIST.add(Book("Kokoro", listOf<String>("Natsume Soseki"), "https://google.com"))
+        val list = findViewById<RecyclerView>(R.id.book_list)
 
+        val adapter = BookListAdapter(this)
 
-        model.books.observe(this, Observer {
-            val list = findViewById<RecyclerView>(R.id.book_list)
+        adapter.data = ArrayList()
 
+        list.adapter = adapter
+
+        model.getBooks().observe(this, {
             if (list.adapter != null) {
                 val adapter = list.adapter as BookListAdapter
                 adapter.data = it
-                adapter?.notifyDataSetChanged()
+                adapter.notifyDataSetChanged()
             } else {
                 val adapter = BookListAdapter(this)
                 adapter.data = it
@@ -70,6 +66,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun searchBooks() {
         val searchQuery = searchInput.text.toString()
-        model.getBooks(searchQuery)
+        model.searchBooks(searchQuery)
     }
 }

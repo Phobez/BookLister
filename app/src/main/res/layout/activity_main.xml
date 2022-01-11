@@ -19,8 +19,9 @@
             android:layout_weight="3"
             android:ems="10"
             android:hint="@string/search_hint"
+            android:imeOptions="actionDone"
             android:importantForAutofill="no"
-            android:inputType="textPersonName"
+            android:inputType="text"
             android:minHeight="48dp"
             android:singleLine="true"
             tools:ignore="TextContrastCheck" />
