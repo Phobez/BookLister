@@ -4,5 +4,5 @@
     <string name="search_button">Search</string>
     <string name="no_data">Try searching something!</string>
     <string name="no_results">No search results found. Try searching something else.</string>
-    <string name="no_internet_connection">No internet connection.</string>
+    <string name="no_internet_connection">No internet connection. Please connect to the internet and reopen the app.</string>
 </resources>

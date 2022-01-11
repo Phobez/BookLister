@@ -1,5 +1,6 @@
 package com.example.booklister
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,7 +9,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import timber.log.Timber
 import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
@@ -26,37 +30,40 @@ class BookViewModel : ViewModel() {
     fun searchBooks(searchQuery: String) {
         val newBooks = ArrayList<Book>()
 
-        val url = URL("https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=10")
+        // val url = URL("https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=20")
+        val url = URL("https://www.googleapis.com/books/v5/volumes?q=${searchQuery}&maxResults=20")
 
         viewModelScope.launch {
             val res = makeHttpRequest(url)
 
-            val resObj = JSONObject(res)
+            if (res.isNotBlank()) {
+                val resObj = JSONObject(res)
 
-            if (resObj.has("items")) {
-                val items = resObj.getJSONArray("items")
+                if (resObj.has("items")) {
+                    val items = resObj.getJSONArray("items")
 
-                val maxIndex = items.length() - 1
+                    val maxIndex = items.length() - 1
 
-                for (i in 0..maxIndex) {
-                    val item = items.getJSONObject(i).getJSONObject("volumeInfo")
-                    val title = item.getString("title")
+                    for (i in 0..maxIndex) {
+                        val item = items.getJSONObject(i).getJSONObject("volumeInfo")
+                        val title = item.getString("title")
 
-                    val authors = ArrayList<String>()
+                        val authors = ArrayList<String>()
 
-                    if (item.has("authors")) {
-                        val authorsRaw = item.getJSONArray("authors")
+                        if (item.has("authors")) {
+                            val authorsRaw = item.getJSONArray("authors")
 
-                        val maxAuthorsRawIndex = authorsRaw.length() - 1
+                            val maxAuthorsRawIndex = authorsRaw.length() - 1
 
-                        for (j in 0..maxAuthorsRawIndex) {
-                            authors.add(authorsRaw.getString(j))
+                            for (j in 0..maxAuthorsRawIndex) {
+                                authors.add(authorsRaw.getString(j))
+                            }
                         }
+
+                        val link = item.getString("canonicalVolumeLink")
+
+                        newBooks.add(Book(title, authors, link))
                     }
-
-                    val link = item.getString("canonicalVolumeLink")
-
-                    newBooks.add(Book(title, authors, link))
                 }
             }
 
@@ -67,24 +74,38 @@ class BookViewModel : ViewModel() {
     private suspend fun makeHttpRequest(url: URL): String {
         return withContext(Dispatchers.IO) {
             val urlConnection = url.openConnection() as HttpURLConnection
-            urlConnection.readTimeout = 10000
-            urlConnection.connectTimeout = 15000
-            urlConnection.requestMethod = "GET"
-            urlConnection.connect()
+            var inputStream: InputStream? = null
+            var res = ""
 
-            val inputStream = urlConnection.inputStream
-            val output = StringBuilder()
+            try {
+                urlConnection.readTimeout = 10000
+                urlConnection.connectTimeout = 15000
+                urlConnection.requestMethod = "GET"
+                urlConnection.connect()
 
-            val inputStreamReader = InputStreamReader(inputStream, Charset.forName("UTF-8"))
-            val reader = BufferedReader(inputStreamReader)
-            var line = reader.readLine()
+                if (urlConnection.responseCode == 200) {
+                    inputStream = urlConnection.inputStream
+                    val output = StringBuilder()
 
-            while (line != null) {
-                output.append(line)
-                line = reader.readLine()
+                    val inputStreamReader = InputStreamReader(inputStream, Charset.forName("UTF-8"))
+                    val reader = BufferedReader(inputStreamReader)
+                    var line = reader.readLine()
+
+                    while (line != null) {
+                        output.append(line)
+                        line = reader.readLine()
+                    }
+
+                    res = output.toString()
+                } else {
+                    Timber.e("Error " + urlConnection.responseCode)
+                }
+            } catch (e: IOException) {
+                Timber.e("Problem retrieving book JSON results:", e)
+            } finally {
+                urlConnection.disconnect()
+                inputStream?.close()
             }
-
-            val res = output.toString()
 
             res
         }
